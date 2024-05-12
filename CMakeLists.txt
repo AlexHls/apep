@@ -10,6 +10,7 @@ find_package(OpenGL REQUIRED)
 
 include_directories(imgui)
 include_directories(imgui/backends)
+include_directories(implot)
 
 add_executable(apep
         src/main.cpp
@@ -19,6 +20,8 @@ add_executable(apep
         imgui/imgui_tables.cpp
         imgui/backends/imgui_impl_glfw.cpp
         imgui/backends/imgui_impl_opengl3.cpp
+        implot/implot.cpp
+        implot/implot_items.cpp
 )
 
 target_link_libraries(apep PUBLIC glfw OpenGL::GL)

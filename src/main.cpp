@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "implot.h"
 #include <GLFW/glfw3.h>
 
 static void glfw_error_callback(int error, const char *description) {
@@ -32,6 +33,7 @@ int main(int argc, char *argv[]) {
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  ImPlot::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
@@ -44,9 +46,15 @@ int main(int argc, char *argv[]) {
   ImGui_ImplOpenGL3_Init(glsl_version);
 
   // Our state
-  bool show_window = true;
+  bool show_output_window = true;
+  bool show_plot_window = true;
   ImVec4 clear_color;
   clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+  float a = 0.0f;
+  float b = 1.0f;
+
+  float x[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -57,24 +65,48 @@ int main(int argc, char *argv[]) {
     ImGui::NewFrame();
 
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-    static float f = 0.0f;
-    static int counter = 0;
+    ImGui::Begin("Input window");
 
-    ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+    ImGui::Text("Set the input for the calculation here");
+    ImGui::Checkbox("Output Window", &show_output_window);
+    ImGui::Checkbox("Plot Window", &show_plot_window);
 
-    ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-    ImGui::Checkbox("Demo Window", &show_window);      // Edit bools storing our window open/close state
-
-    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-    ImGui::ColorEdit3("clear color", reinterpret_cast<float *>(&clear_color)); // Edit 3 floats representing a color
-
-    if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-      counter++;
-    ImGui::SameLine();
-    ImGui::Text("counter = %d", counter);
+    ImGui::SliderFloat("Input a", &a, 0.0f, 1.0f);
+    ImGui::SliderFloat("Input b", &b, 1.0f, 10.0f);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
     ImGui::End();
+
+    if (show_output_window) {
+      static float c = 0.0f;
+      ImGui::Begin("Output window");
+
+      ImGui::Text(("Output of a + b"));
+      ImGui::Text("a: %.3f", a);
+      ImGui::Text("b: %.3f", b);
+
+      c = a + b;
+      ImGui::Text("a + b = %.3f", c);
+
+
+      ImGui::End();
+    }
+
+    if (show_plot_window) {
+      static float f_x[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      ImGui::Begin("Plot window");
+      ImGui::Text("f(x)");
+
+      for (int i = 0; i < 10; i++) {
+        f_x[i] = a * x[i] + b;
+      }
+      if (ImPlot::BeginPlot("Result")) {
+        ImPlot::PlotLine("f(x)", x, f_x, 10);
+        ImPlot::EndPlot();
+      }
+
+      ImGui::End();
+    }
 
     // Rendering
     ImGui::Render();
@@ -93,6 +125,7 @@ int main(int argc, char *argv[]) {
   // Cleanup
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
+  ImPlot::DestroyContext();
   ImGui::DestroyContext();
 
   glfwDestroyWindow(window);
