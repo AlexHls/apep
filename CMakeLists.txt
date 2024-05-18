@@ -88,3 +88,6 @@ target_link_libraries(app implot)
 
 add_executable(demo "src/demo.cpp")
 target_link_libraries(demo PUBLIC app)
+
+add_executable(rt_instability "src/rt_instability.cpp")
+target_link_libraries(rt_instability PUBLIC app)
