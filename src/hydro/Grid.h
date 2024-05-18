@@ -10,6 +10,8 @@ struct Grid {
     std::vector<std::vector<float>> gx;
     std::vector<std::vector<float>> gy;
     int nx, ny, nghost;
+    int nxg, nyg; // nxg = nx + 2 * nghost, nyg = ny + 2 * nghost
+    int nxmg, nymg; // nxmg = nxg - nghost, nymg = nyg - nghost
     float rho_ini_lower, rho_ini_upper;
     float en_ini;
     float grav_x_ini, grav_y_ini;

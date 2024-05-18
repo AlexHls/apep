@@ -11,7 +11,7 @@
 #include "implot.h"
 
 void Grid::Update() {
-    Image image(nx, ny, rho);
+    Image image(nghost, nx, ny, rho);
     auto image_size = image.GetWindowSize();
 
     static float scale_min = 0;
@@ -73,6 +73,10 @@ void Grid::AttrsFromSettings(const struct RTSettings &settings) {
     this->nx = settings.nx;
     this->ny = settings.ny;
     this->nghost = settings.nghost;
+    this->nxg = nx + 2 * nghost;
+    this->nyg = ny + 2 * nghost;
+    this->nxmg = nxg - nghost;
+    this->nymg = nyg - nghost;
     this->rho_ini_lower = settings.rho_ini_lower;
     this->rho_ini_upper = settings.rho_ini_upper;
     this->en_ini = settings.en_ini;
@@ -89,27 +93,27 @@ void Grid::AttrsFromSettings(const struct RTSettings &settings) {
 }
 
 void Grid::Resize() {
-    rho.resize(nx);
-    en.resize(nx);
-    u.resize(nx);
-    v.resize(nx);
-    gx.resize(nx);
-    gy.resize(nx);
-    for (int i = 0; i < nx; i++) {
-        rho[i].resize(ny);
-        en[i].resize(ny);
-        u[i].resize(ny);
-        v[i].resize(ny);
-        gx[i].resize(ny);
-        gy[i].resize(ny);
+    rho.resize(nxg);
+    en.resize(nxg);
+    u.resize(nxg);
+    v.resize(nxg);
+    gx.resize(nxg);
+    gy.resize(nxg);
+    for (int i = 0; i < nxg; i++) {
+        rho[i].resize(nyg);
+        en[i].resize(nyg);
+        u[i].resize(nyg);
+        v[i].resize(nyg);
+        gx[i].resize(nyg);
+        gy[i].resize(nyg);
     }
 }
 
 
 void Grid::RTInstability() {
     // Initial condition setup for RT Instability
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
+    for (int i = 0; i < nxg; i++) {
+        for (int j = 0; j < nyg; j++) {
             const float xi = x1 + dlx * (i - 0.5f);
             const float yj = y1 + dly * (j - 0.5f);
 
@@ -136,29 +140,29 @@ void Grid::WriteGrid() {
     }
     // Write a line containing the variable name, followed by the values
     fprintf(file, "# Density\n");
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
+    for (int i = nghost; i < nxmg; i++) {
+        for (int j = nghost; j < nymg; j++) {
             fprintf(file, "%f ", rho[i][j]);
         }
         fprintf(file, "\n");
     }
     fprintf(file, "# Energy\n");
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
+    for (int i = nghost; i < nxmg; i++) {
+        for (int j = nghost; j < nymg; j++) {
             fprintf(file, "%f ", en[i][j]);
         }
         fprintf(file, "\n");
     }
     fprintf(file, "# Velocity x\n");
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
+    for (int i = nghost; i < nxmg; i++) {
+        for (int j = nghost; j < nymg; j++) {
             fprintf(file, "%f ", u[i][j]);
         }
         fprintf(file, "\n");
     }
     fprintf(file, "# Velocity y\n");
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
+    for (int i = nghost; i < nxmg; i++) {
+        for (int j = nghost; j < nymg; j++) {
             fprintf(file, "%f ", v[i][j]);
         }
         fprintf(file, "\n");
