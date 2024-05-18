@@ -82,12 +82,23 @@ add_library(app
 target_include_directories(app PUBLIC src/app)
 target_link_libraries(app implot)
 
+###################
+# Hydro Framework #
+###################
+add_library(hydro
+        src/hydro/Grid.h
+        src/hydro/Grid.cpp
+)
+target_include_directories(hydro PUBLIC src/hydro)
+
 #######################
 # Individual programs #
 #######################
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/utils)
 
 add_executable(demo "src/demo.cpp")
 target_link_libraries(demo PUBLIC app)
 
 add_executable(rt_instability "src/rt_instability.cpp")
-target_link_libraries(rt_instability PUBLIC app)
+target_link_libraries(rt_instability PUBLIC app hydro)
