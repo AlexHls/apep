@@ -20,6 +20,9 @@ struct RTInstabilityApp : App {
       settings.resetting = 0;
     }
     grid.Update();
+    if (grid.time < settings.tmax && settings.playing) {
+      grid.time += 0.01f;
+    }
   }
 };
 int main(int argc, char const *argv[]) {

@@ -1,4 +1,9 @@
 #include "Grid.h"
+
+#include <cstdio>
+#include <string>
+#include <valarray>
+
 #include "Image.h"
 #include "Settings.h"
 
@@ -9,8 +14,8 @@ void Grid::Update() {
     Image image(nx, ny, rho);
     auto image_size = image.GetWindowSize();
 
-    static float scale_min       = 0;
-    static float scale_max       = 3.0f;
+    static float scale_min = 0;
+    static float scale_max = 3.0f;
 
     static ImPlotColormap map = ImPlotColormap_Viridis;
     if (ImPlot::ColormapButton(ImPlot::GetColormapName(map),ImVec2(225,0),map)) {
@@ -26,6 +31,19 @@ void Grid::Update() {
     ImGui::LabelText("##Colormap Index", "%s", "Change Colormap");
     ImGui::SetNextItemWidth(225);
     ImGui::DragFloatRange2("Min / Max",&scale_min, &scale_max, 0.01f, -20, 20);
+    ImGui::Text("Current Time: %.3f", time);
+    ImGui::Text("Current dlx: %.3f", dlx);
+    ImGui::Text("Current dly: %.3f", dly);
+
+    // Display image size
+    ImGui::Text("Image Size: %.0f x %.0f", image_size.x, image_size.y);
+    if (ImGui::Button("Print Grid")) {
+        image.Print();
+    }
+
+    if (ImGui::Button("Save Grid")) {
+        WriteGrid();
+    }
 
     static ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
 
@@ -34,7 +52,7 @@ void Grid::Update() {
     if (ImPlot::BeginPlot("##Heatmap1",image_size,ImPlotFlags_NoLegend|ImPlotFlags_NoMouseText)) {
 
         ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
-        ImPlot::PlotHeatmap("heat",image.GetImage(),nx,ny,scale_min,scale_max,nullptr,ImPlotPoint(0,0),ImPlotPoint(1,1));
+        ImPlot::PlotHeatmap("heat",image.GetImage(),image.nx,image.ny,scale_min,scale_max,nullptr,ImPlotPoint(0,0),ImPlotPoint(1,1));
         ImPlot::EndPlot();
     }
     ImGui::SameLine();
@@ -42,43 +60,108 @@ void Grid::Update() {
 }
 
 Grid::Grid(const struct RTSettings &settings) {
+    Reset(settings);
+}
+
+void Grid::Reset(const RTSettings &settings) {
+    AttrsFromSettings(settings);
+    Resize();
+    RTInstability();
+}
+
+void Grid::AttrsFromSettings(const struct RTSettings &settings) {
     this->nx = settings.nx;
     this->ny = settings.ny;
-    this->boundary_y = settings.boundary_y;
+    this->nghost = settings.nghost;
     this->rho_ini_lower = settings.rho_ini_lower;
     this->rho_ini_upper = settings.rho_ini_upper;
+    this->en_ini = settings.en_ini;
+    this->grav_x_ini = settings.grav_x_ini;
+    this->grav_y_ini = settings.grav_y_ini;
+    this->perturb_strength = settings.perturb_strength;
+    this->x1 = settings.x1;
+    this->x2 = settings.x2;
+    this->y1 = settings.y1;
+    this->y2 = settings.y2;
+    this->dlx = (settings.x2 - settings.x1) / settings.nx;
+    this->dly = (settings.y2 - settings.y1) / settings.ny;
+    this->time = 0.0f;
+}
 
+void Grid::Resize() {
     rho.resize(nx);
+    en.resize(nx);
+    u.resize(nx);
+    v.resize(nx);
+    gx.resize(nx);
+    gy.resize(nx);
     for (int i = 0; i < nx; i++) {
         rho[i].resize(ny);
+        en[i].resize(ny);
+        u[i].resize(ny);
+        v[i].resize(ny);
+        gx[i].resize(ny);
+        gy[i].resize(ny);
+    }
+}
+
+
+void Grid::RTInstability() {
+    // Initial condition setup for RT Instability
+    for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            if (j < boundary_y) {
+            const float xi = x1 + dlx * (i - 0.5f);
+            const float yj = y1 + dly * (j - 0.5f);
+
+            gx[i][j] = grav_x_ini;
+            gy[i][j] = grav_y_ini;
+            if (yj < 0.0f) {
                 rho[i][j] = rho_ini_lower;
             } else {
                 rho[i][j] = rho_ini_upper;
             }
+            en[i][j] = en_ini + gy[i][j] * yj * rho[i][j];
+            u[i][j] = 0.0f;
+            v[i][j] = perturb_strength * (1.0f + std::cos(4.0f*M_PI*xi)) * (1.0f + std::cos(3.0f*M_PI*yj)) / 4.0f;
         }
     }
 }
 
-void Grid::Reset(const RTSettings &settings) {
-    // Essentially this is the same as the constructor, but we need to be able to reset the grid
-    this->nx = settings.nx;
-    this->ny = settings.ny;
-    this->boundary_y = settings.boundary_y;
-    this->rho_ini_lower = settings.rho_ini_lower;
-    this->rho_ini_upper = settings.rho_ini_upper;
+void Grid::WriteGrid() {
+    const std::string filename = "grid.txt";
 
-    rho.resize(nx);
-    for (int i = 0; i < nx; i++) {
-        rho[i].resize(ny);
-        for (int j = 0; j < ny; j++) {
-            if (j < boundary_y) {
-                rho[i][j] = rho_ini_lower;
-            } else {
-                rho[i][j] = rho_ini_upper;
-            }
-        }
+    FILE *file = fopen(filename.c_str(), "w");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file %s\n", filename.c_str());
     }
-
+    // Write a line containing the variable name, followed by the values
+    fprintf(file, "# Density\n");
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            fprintf(file, "%f ", rho[i][j]);
+        }
+        fprintf(file, "\n");
+    }
+    fprintf(file, "# Energy\n");
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            fprintf(file, "%f ", en[i][j]);
+        }
+        fprintf(file, "\n");
+    }
+    fprintf(file, "# Velocity x\n");
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            fprintf(file, "%f ", u[i][j]);
+        }
+        fprintf(file, "\n");
+    }
+    fprintf(file, "# Velocity y\n");
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            fprintf(file, "%f ", v[i][j]);
+        }
+        fprintf(file, "\n");
+    }
+    fclose(file);
 }
