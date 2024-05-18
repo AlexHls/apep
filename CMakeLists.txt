@@ -8,20 +8,20 @@ find_package(glfw3 REQUIRED)
 # Find OpenGL
 find_package(OpenGL REQUIRED)
 
-include_directories(imgui)
-include_directories(imgui/backends)
-include_directories(implot)
+include_directories(submodules/imgui)
+include_directories(submodules/imgui/backends)
+include_directories(submodules/implot)
 
 add_executable(apep
         src/main.cpp
-        imgui/imgui.cpp
-        imgui/imgui_draw.cpp
-        imgui/imgui_widgets.cpp
-        imgui/imgui_tables.cpp
-        imgui/backends/imgui_impl_glfw.cpp
-        imgui/backends/imgui_impl_opengl3.cpp
-        implot/implot.cpp
-        implot/implot_items.cpp
+        submodules/imgui/imgui.cpp
+        submodules/imgui/imgui_draw.cpp
+        submodules/imgui/imgui_widgets.cpp
+        submodules/imgui/imgui_tables.cpp
+        submodules/imgui/backends/imgui_impl_glfw.cpp
+        submodules/imgui/backends/imgui_impl_opengl3.cpp
+        submodules/implot/implot.cpp
+        submodules/implot/implot_items.cpp
 )
 
 target_link_libraries(apep PUBLIC glfw OpenGL::GL)

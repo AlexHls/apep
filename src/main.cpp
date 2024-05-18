@@ -1,3 +1,4 @@
+#include <cmath>
 #include <iostream>
 
 #include "imgui.h"
@@ -54,7 +55,9 @@ int main(int argc, char *argv[]) {
   float a = 0.0f;
   float b = 1.0f;
 
-  float x[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  int ploy_degree = 1;
+
+  float x[20] = {-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -73,6 +76,20 @@ int main(int argc, char *argv[]) {
 
     ImGui::SliderFloat("Input a", &a, 0.0f, 1.0f);
     ImGui::SliderFloat("Input b", &b, 1.0f, 10.0f);
+
+    // Increment -/+ buttons to change the degree of the polynomial
+    if (ImGui::Button("-")) {
+      if (ploy_degree > 0) {
+        ploy_degree--;
+      }
+    }
+    ImGui::SameLine();
+    ImGui::Text("Polynomial degree: %d", ploy_degree);
+    ImGui::SameLine();
+    if (ImGui::Button("+")) {
+      ploy_degree++;
+    }
+
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
     ImGui::End();
@@ -93,15 +110,15 @@ int main(int argc, char *argv[]) {
     }
 
     if (show_plot_window) {
-      static float f_x[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      static float f_x[20] = {-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
       ImGui::Begin("Plot window");
       ImGui::Text("f(x)");
 
-      for (int i = 0; i < 10; i++) {
-        f_x[i] = a * x[i] + b;
+      for (int i = 0; i < 20; i++) {
+        f_x[i] = a * std::pow(x[i], ploy_degree) + b;
       }
       if (ImPlot::BeginPlot("Result")) {
-        ImPlot::PlotLine("f(x)", x, f_x, 10);
+        ImPlot::PlotLine("f(x)", x, f_x, 20);
         ImPlot::EndPlot();
       }
 
