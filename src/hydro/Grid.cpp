@@ -208,12 +208,13 @@ void Grid::PrimToCons() {
 void Grid::ConsToPrim() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            static float rho = cons.rho[i][j];
-            u[i + nghost][j + nghost] = cons.u[i][j] / rho;
-            v[i + nghost][j + nghost] = cons.v[i][j] / rho;
+            static float rho_new = cons.rho[i][j];
+            u[i + nghost][j + nghost] = cons.u[i][j] / rho_new;
+            v[i + nghost][j + nghost] = cons.v[i][j] / rho_new;
             en[i + nghost][j + nghost] =
-                    gamma_ad * (cons.en[i][j] - 0.5 / rho * (std::pow(cons.u[i][j], 2) + std::pow(cons.v[i][j], 2)));
-            this->rho[i + nghost][j + nghost] = rho;
+                    gamma_ad * (cons.en[i][j] - 0.5 / rho_new * (
+                                    std::pow(cons.u[i][j], 2) + std::pow(cons.v[i][j], 2)));
+            rho[i + nghost][j + nghost] = rho_new;
         }
     }
 }

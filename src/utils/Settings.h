@@ -40,7 +40,7 @@ struct RTSettings {
     resetting = 0;
     playing = 0;
     reconstruct_type = 0;
-    riemann_solver_type = 0;
+    riemann_solver_type = 1;
   }
 
   void Update() {
@@ -67,9 +67,10 @@ struct RTSettings {
       if (ImGui::BeginListBox("Reconstruction Method")) {
         for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
           const bool is_selected = (item_current == n);
-          if (ImGui::Selectable(items[n], is_selected))
+          if (ImGui::Selectable(items[n], is_selected)) {
             item_current = n;
-          reconstruct_type = n;
+            reconstruct_type = n;
+          }
           if (is_selected)
             ImGui::SetItemDefaultFocus();
         }
@@ -78,13 +79,14 @@ struct RTSettings {
     }
     if (ImGui::CollapsingHeader("Riemann Solver")) {
       const char *items[] = {"HLLE", "HLLC"};
-      static int item_current = 0;
+      static int item_current = 1;
       if (ImGui::BeginListBox("Riemann Solver")) {
         for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
           const bool is_selected = (item_current == n);
-          if (ImGui::Selectable(items[n], is_selected))
+          if (ImGui::Selectable(items[n], is_selected)) {
             item_current = n;
-          riemann_solver_type = n;
+            riemann_solver_type = n;
+          }
           if (is_selected)
             ImGui::SetItemDefaultFocus();
         }
