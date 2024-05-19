@@ -16,17 +16,20 @@ struct RTInstabilityApp : App {
 
     settings.Update();
     if (settings.resetting > 0) {
+      grid.Clear();
       grid.Reset(settings);
       settings.resetting = 0;
     }
     grid.Update();
     if (grid.time < settings.tmax && settings.playing) {
-      grid.time += 0.01f;
+      grid.TimeStep();
+      grid.time += grid.dt;
     }
   }
 };
+
 int main(int argc, char const *argv[]) {
-  RTInstabilityApp app("Rayleigh-Taylor Instability", 1280, 800, argc, argv);
+  RTInstabilityApp app("Rayleigh-Taylor Instability", 1920, 1080, argc, argv);
   app.Run();
   return EXIT_SUCCESS;
 }

@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_compile_options(-O3 -march=native)
 
+# Debug build
+set(CMAKE_BUILD_TYPE Debug)
+add_compile_options(-g)
+
 find_package(glfw3 REQUIRED)
 
 # Find OpenGL
@@ -86,8 +90,13 @@ target_link_libraries(app implot)
 # Hydro Framework #
 ###################
 add_library(hydro
+        src/hydro/Hydro.h
         src/hydro/Grid.h
         src/hydro/Grid.cpp
+        src/hydro/Reconstruct.h
+        src/hydro/Reconstruct.cpp
+        src/hydro/RiemannSolver.h
+        src/hydro/RiemannSolver.cpp
 )
 target_include_directories(hydro PUBLIC src/hydro)
 

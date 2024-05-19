@@ -30,10 +30,11 @@ inline Image::Image(const int nghost, const int nx, const int ny,
     this->nx = ny;
     this->ny = nx;
     this->data = new float[ny * nx];
+    static const int max = ny + nghost;
     aspect_ratio = static_cast<float>(nx) / ny;
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            data[j * nx + i] = value[nghost + i][ny-(j+1) - nghost];
+            data[j * nx + i] = value[nghost + i][max-(j+1)];
         }
     }
 }
