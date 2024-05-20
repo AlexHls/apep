@@ -32,6 +32,7 @@ void Reconstructor::ReconstructConstant(const struct QVec &q, struct QVec &ql,
 void Reconstructor::ReconstructLinear(const struct QVec &q, struct QVec &ql,
                                       struct QVec &qr, const int dir) {
     // Reconstruct linear
+    // TODO: Probably broken
     if (dir == XDIR) {
         for (int i = 0; i < nx + 1; i++) {
             ql.rho[i] = q.rho[i + 1] - 0.5f * 0.5f * (q.rho[i + 1] - q.rho[i] + q.rho[i + 2] - q.rho[i + 1]);

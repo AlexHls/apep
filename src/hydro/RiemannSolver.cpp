@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "Reconstruct.h"
+
 int sign(const float val) {
     return std::signbit(val) ? -1 : 1;
 }
@@ -10,17 +12,20 @@ int sign(const float val) {
 RiemannSolver::RiemannSolver(int nx, int ny, int nghost, int rs) : nx(nx), ny(ny), nghost(nghost), rs(rs) {
 }
 
-void RiemannSolver::Solve(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad) {
+void RiemannSolver::Solve(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad,
+                          const int dir) {
     if (rs == HLLE) {
-        SolveHLLE(ql, qr, flux, gamma_ad);
+        SolveHLLE(ql, qr, flux, gamma_ad, dir);
     } else if (rs == HLLC) {
-        SolveHLLC(ql, qr, flux, gamma_ad);
+        SolveHLLC(ql, qr, flux, gamma_ad, dir);
     }
 }
 
-void RiemannSolver::SolveHLLC(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad) {
+void RiemannSolver::SolveHLLC(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad,
+                              const int dir) {
     // Solve HLLC
-    for (int i = 0; i < nx + 1; i++) {
+    const int idx_max = dir == XDIR ? nx + 1 : ny + 1;
+    for (int i = 0; i < idx_max; i++) {
         // Left states
         const float rhol = ql.rho[i];
         const float ul = ql.u[i];
@@ -53,7 +58,7 @@ void RiemannSolver::SolveHLLC(const struct QVec &ql, const struct QVec &qr, stru
         const float rhobar = 0.5 * (rhol + rhor);
         const float cbar = std::sqrt(0.5 * (cl + cr));
 
-        const float pstar = 0.5 * (pl + pr) - 0.5 * (ur - ul) * rhobar * cbar;
+        const float pstar = 0.5 * (pl + pr) - 0.5 * rhobar * cbar * (ur - ul);
 
         const int sgn = sign(ustar);
 
@@ -77,6 +82,7 @@ void RiemannSolver::SolveHLLC(const struct QVec &ql, const struct QVec &qr, stru
     }
 }
 
-void RiemannSolver::SolveHLLE(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad) {
+void RiemannSolver::SolveHLLE(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad,
+                              const int dir) {
     // Solve HLLE
 }

@@ -33,6 +33,7 @@ void Grid::Update() {
     ImGui::SetNextItemWidth(225);
     ImGui::DragFloatRange2("Min / Max", &scale_min, &scale_max, 0.01f, -20, 20);
     ImGui::Text("Current Time: %.3f", time);
+    ImGui::Text(("Current dt: %.3f"), dt);
     ImGui::Text("Current dlx: %.3f", dlx);
     ImGui::Text("Current dly: %.3f", dly);
     if (reconstruct_type == ReconstructType::CONSTANT) {
@@ -176,14 +177,14 @@ void Grid::Resize() {
 
 void Grid::RTInstability() {
     // Initial condition setup for RT Instability
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            const float xi = x1 + dlx * (i - 0.5f);
-            const float yj = y1 + dly * (j - 0.5f);
+    for (int j = 0; j < ny; j++) {
+        for (int i = 0; i < nx; i++) {
+            const float xi = x1 + dlx * ((i + 1) - 0.5f);
+            const float yj = y1 + dly * ((j + 1) - 0.5f);
 
             gx[i + nghost][j + nghost] = grav_x_ini;
             gy[i + nghost][j + nghost] = grav_y_ini;
-            if (yj < 0.0f) {
+            if (yj <= 0.0f) {
                 rho[i + nghost][j + nghost] = rho_ini_lower;
             } else {
                 rho[i + nghost][j + nghost] = rho_ini_upper;
@@ -256,8 +257,8 @@ void Grid::ConsToPrim() {
             u[i + nghost][j + nghost] = cons.u[i][j] / rho_new;
             v[i + nghost][j + nghost] = cons.v[i][j] / rho_new;
             en[i + nghost][j + nghost] =
-                    gamma_ad * (cons.en[i][j] - 0.5 / rho_new * (
-                                    std::pow(cons.u[i][j], 2) + std::pow(cons.v[i][j], 2)));
+                    (gamma_ad - 1) * (cons.en[i][j] - 0.5 / rho_new * (
+                                          std::pow(cons.u[i][j], 2) + std::pow(cons.v[i][j], 2)));
             rho[i + nghost][j + nghost] = rho_new;
         }
     }
@@ -266,6 +267,20 @@ void Grid::ConsToPrim() {
 void Grid::TimeStep() {
     // Advance one time step
     PrimToCons();
+
+    // TODO remove this in case this is redundant
+    QVec2 cons0(nx, ny);
+
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            cons0.rho[i][j] = rho[i + nghost][j + nghost];
+            cons0.u[i][j] = rho[i + nghost][j + nghost] * u[i + nghost][j + nghost];
+            cons0.v[i][j] = rho[i + nghost][j + nghost] * v[i + nghost][j + nghost];
+            cons0.en[i][j] = en[i + nghost][j + nghost] * (1 / (gamma_ad - 1))
+                             + 0.5f * rho[i + nghost][j + nghost] * (std::pow(u[i + nghost][j + nghost], 2) +
+                                                                     std::pow(v[i + nghost][j + nghost], 2));
+        }
+    }
 
     // First, apply boundary conditions
     ApplyBoundaryConditions();
@@ -277,15 +292,15 @@ void Grid::TimeStep() {
         QVec qlx(nx + 1), qrx(nx + 1), qx(nxg);
         QVec fluxx(nx + 1);
         for (int i = 0; i < nxg; i++) {
-            qx.Set(i, rho[i][j], u[i][j], v[i][j], en[i][j]);
+            qx.Set(i, rho[i][j + nghost], u[i][j + nghost], v[i][j + nghost], en[i][j + nghost]);
         }
         reconstructor->Reconstruct(qx, qlx, qrx, XDIR);
-        riemann_solver->Solve(qlx, qrx, fluxx, gamma_ad);
+        riemann_solver->Solve(qlx, qrx, fluxx, gamma_ad, XDIR);
         for (int i = 0; i < nx; i++) {
-            res.rho[i][j] = (fluxx.rho[i + 1] - fluxx.rho[i]) / dlx;
-            res.u[i][j] = (fluxx.u[i + 1] - fluxx.u[i]) / dlx;
-            res.v[i][j] = (fluxx.v[i + 1] - fluxx.v[i]) / dlx;
-            res.en[i][j] = (fluxx.en[i + 1] - fluxx.en[i]) / dlx;
+            res.rho[i][j] += (fluxx.rho[i + 1] - fluxx.rho[i]) / dlx;
+            res.u[i][j] += (fluxx.u[i + 1] - fluxx.u[i]) / dlx;
+            res.v[i][j] += (fluxx.v[i + 1] - fluxx.v[i]) / dlx;
+            res.en[i][j] += (fluxx.en[i + 1] - fluxx.en[i]) / dlx;
         }
     }
 
@@ -294,15 +309,18 @@ void Grid::TimeStep() {
         QVec qly(ny + 1), qry(ny + 1), qy(nyg);
         QVec fluxy(ny + 1);
         for (int j = 0; j < nyg; j++) {
-            qy.Set(j, rho[i][j], u[i][j], v[i][j], en[i][j]);
+            qy.Set(j, rho[i + nghost][j], u[i + nghost][j], v[i + nghost][j], en[i + nghost][j]);
         }
         reconstructor->Reconstruct(qy, qly, qry, YDIR);
-        riemann_solver->Solve(qly, qry, fluxy, gamma_ad);
+        qly.FlipVelocities();
+        qry.FlipVelocities();
+        riemann_solver->Solve(qly, qry, fluxy, gamma_ad, YDIR);
+        fluxy.FlipVelocities();
         for (int j = 0; j < ny; j++) {
-            res.rho[i][j] = (fluxy.rho[j + 1] - fluxy.rho[j]) / dly;
-            res.u[i][j] = (fluxy.u[j + 1] - fluxy.u[j]) / dly;
-            res.v[i][j] = (fluxy.v[j + 1] - fluxy.v[j]) / dly;
-            res.en[i][j] = (fluxy.en[j + 1] - fluxy.en[j]) / dly;
+            res.rho[i][j] += (fluxy.rho[j + 1] - fluxy.rho[j]) / dly;
+            res.u[i][j] += (fluxy.u[j + 1] - fluxy.u[j]) / dly;
+            res.v[i][j] += (fluxy.v[j + 1] - fluxy.v[j]) / dly;
+            res.en[i][j] += (fluxy.en[j + 1] - fluxy.en[j]) / dly;
         }
     }
 
@@ -321,10 +339,10 @@ void Grid::TimeStep() {
     // TODO: Move this to it's own function
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            cons.rho[i][j] = cons.rho[i][j] + dt * res.rho[i][j];
-            cons.u[i][j] = cons.u[i][j] + dt * res.u[i][j];
-            cons.v[i][j] = cons.v[i][j] + dt * res.v[i][j];
-            cons.en[i][j] = cons.en[i][j] + dt * res.en[i][j];
+            cons.rho[i][j] = cons0.rho[i][j] + dt * res.rho[i][j];
+            cons.u[i][j] = cons0.u[i][j] + dt * res.u[i][j];
+            cons.v[i][j] = cons0.v[i][j] + dt * res.v[i][j];
+            cons.en[i][j] = cons0.en[i][j] + dt * res.en[i][j];
         }
     }
 
@@ -344,10 +362,10 @@ void Grid::ApplyBoundaryConditions() {
             u[ig][j] = u[nx + ig][j];
             v[ig][j] = v[nx + ig][j];
             // Right boundary
-            rho[nxg - ig - 1][j] = rho[2 * nghost - (ig + 1)][j];
-            en[nxg - ig - 1][j] = en[2 * nghost - (ig + 1)][j];
-            u[nxg - ig - 1][j] = u[2 * nghost - (ig + 1)][j];
-            v[nxg - ig - 1][j] = v[2 * nghost - (ig + 1)][j];
+            rho[nx + nghost + ig][j] = rho[nghost + ig][j];
+            en[nx + nghost + ig][j] = en[nghost + ig][j];
+            u[nx + nghost + ig][j] = u[nghost + ig][j];
+            v[nx + nghost + ig][j] = v[nghost + ig][j];
         }
     }
 
@@ -355,15 +373,15 @@ void Grid::ApplyBoundaryConditions() {
     for (int i = 0; i < nxg; i++) {
         for (int jg = 0; jg < nghost; jg++) {
             // Bottom boundary
-            rho[i][jg] = rho[i][2 * nghost - (jg + 1)];
-            en[i][jg] = en[i][2 * nghost - (jg + 1)];
-            u[i][jg] = u[i][2 * nghost - (jg + 1)];
-            v[i][jg] = -v[i][2 * nghost - (jg + 1)];
+            rho[i][nghost - 1 - jg] = rho[i][nghost - jg];
+            en[i][nghost - 1 - jg] = en[i][nghost - jg];
+            u[i][nghost - 1 - jg] = u[i][nghost - jg];
+            v[i][nghost - 1 - jg] = -v[i][nghost - jg];
             // Top boundary
-            rho[i][nyg - jg - 1] = rho[i][ny - jg + 1];
-            en[i][nyg - jg - 1] = en[i][ny - jg + 1];
-            u[i][nyg - jg - 1] = u[i][ny - jg + 1];
-            v[i][nyg - jg - 1] = -v[i][ny - jg + 1];
+            rho[i][ny + nghost + jg] = rho[i][ny + nghost - 1 - jg];
+            en[i][ny + nghost + jg] = en[i][ny + nghost - 1 - jg];
+            u[i][ny + nghost + jg] = u[i][ny + nghost - 1 - jg];
+            v[i][ny + nghost + jg] = -v[i][ny + nghost - 1 - jg];
         }
     }
 }

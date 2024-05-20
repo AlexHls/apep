@@ -58,6 +58,15 @@ struct QVec {
         this->v = v;
         this->en = en;
     }
+
+    void FlipVelocities() {
+        for (size_t i = 0; i < u.size(); i++) {
+            const float u_tmp = u[i];
+            const float v_tmp = v[i];
+            u[i] = v_tmp;
+            v[i] = -u_tmp;
+        }
+    }
 };
 
 #endif //APEP_HYDRO_HYDRO_H

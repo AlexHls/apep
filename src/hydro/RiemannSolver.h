@@ -18,11 +18,13 @@ struct RiemannSolver {
 
     ~RiemannSolver() = default;
 
-    void Solve(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad);
+    void Solve(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad, const int dir);
 
-    void SolveHLLC(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad);
+    void SolveHLLC(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad,
+                   const int dir);
 
-    void SolveHLLE(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad);
+    void SolveHLLE(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad,
+                   const int dir);
 };
 
 #endif //APEP_HYDRO_RIEMANN_H

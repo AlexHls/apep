@@ -22,22 +22,22 @@ struct RTSettings {
   int riemann_solver_type; // 0 for HLLE, 1 for HLLC
   RTSettings() {
     // Set default values
-    nx = 24;
-    ny = 72;
+    nx = 5;
+    ny = 15;
     nghost = 1;
     x1 = -0.25f;
     x2 = 0.25f;
     y1 = -0.75f;
     y2 = 0.75f;
-    rho_ini_upper = 1.0f; // This is the density of the fluid on the top
-    rho_ini_lower = 2.0f; // This is the density of the fluid on the bottom
+    rho_ini_upper = 2.0f; // This is the density of the fluid on the top
+    rho_ini_lower = 1.0f; // This is the density of the fluid on the bottom
     en_ini = 2.5f;
     grav_x_ini = -0.0f;
     grav_y_ini = -0.1f;
     perturb_strength = 0.01f;
     tmax = 1.0f;
     cfl = 0.8f;
-    gamma_ad = 5.0f / 3.0f;
+    gamma_ad = 1.4f;
     resetting = 0;
     playing = 0;
     advance = 0;
