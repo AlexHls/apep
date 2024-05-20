@@ -43,6 +43,7 @@ void Grid::Update() {
 
     // Display image size
     ImGui::Text("Image Size: %.0f x %.0f", image_size.x, image_size.y);
+    ImGui::Text("Image Grid Size: %.0f x %.0f", image.nx, image.ny);
     if (ImGui::Button("Print Grid")) {
         image.Print();
     }
@@ -251,7 +252,7 @@ void Grid::PrimToCons() {
 void Grid::ConsToPrim() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            const float rho_new = cons.rho[i][j];
+            const float rho_new = cons.rho[i][j] > 0.0f ? cons.rho[i][j] : 1.0e-6f;
             u[i + nghost][j + nghost] = cons.u[i][j] / rho_new;
             v[i + nghost][j + nghost] = cons.v[i][j] / rho_new;
             en[i + nghost][j + nghost] =

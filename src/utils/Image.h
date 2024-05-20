@@ -13,28 +13,28 @@ struct Image {
     float *data;
     float aspect_ratio;
 
-    Image(int nghost, int nx, int ny, const std::vector<std::vector<float>> &value);
+    Image(int nghost, int nx, int ny, const std::vector<std::vector<float> > &value);
 
     void Print();
 
     ~Image();
 
     float *GetImage();
-    ImVec2 GetWindowSize() const;
 
+    ImVec2 GetWindowSize() const;
 };
 
 inline Image::Image(const int nghost, const int nx, const int ny,
-    const std::vector<std::vector<float>> &value) {
+                    const std::vector<std::vector<float> > &value) {
     // Important: We transpose the data here to match the ImPlot heatmap
     this->nx = ny;
     this->ny = nx;
     this->data = new float[ny * nx];
-    static const int max = ny + nghost;
+    const int max = ny + nghost;
     aspect_ratio = static_cast<float>(nx) / ny;
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            data[j * nx + i] = value[nghost + i][max-(j+1)];
+            data[j * nx + i] = value[nghost + i][max - (j + 1)];
         }
     }
 }
