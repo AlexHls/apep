@@ -56,14 +56,56 @@ void Grid::Update() {
 
     ImPlot::PushColormap(map);
 
-    if (ImPlot::BeginPlot("##Heatmap1", image_size, ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
-        ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
-        ImPlot::PlotHeatmap("heat", image.GetImage(), image.nx, image.ny, scale_min, scale_max, nullptr,
-                            ImPlotPoint(0, 0), ImPlotPoint(1, 1));
-        ImPlot::EndPlot();
+    if (ImGui::BeginTabBar("Images", ImGuiTabBarFlags_None)) {
+        if (ImGui::BeginTabItem("rho")) {
+            if (ImPlot::BeginPlot("##Heatmap1", image_size, ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
+                ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
+                ImPlot::PlotHeatmap("heat", image.GetImage(), image.nx, image.ny, scale_min, scale_max, nullptr,
+                                    ImPlotPoint(0, 0), ImPlotPoint(1, 1));
+                ImPlot::EndPlot();
+            }
+            ImGui::SameLine();
+            ImPlot::ColormapScale("##HeatScale", scale_min, scale_max, ImVec2(60, image_size.y));
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("u")) {
+            Image image_u(nghost, nx, ny, u);
+            if (ImPlot::BeginPlot("##Heatmap1", image_size, ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
+                ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
+                ImPlot::PlotHeatmap("heat", image_u.GetImage(), image.nx, image.ny, scale_min, scale_max, nullptr,
+                                    ImPlotPoint(0, 0), ImPlotPoint(1, 1));
+                ImPlot::EndPlot();
+            }
+            ImGui::SameLine();
+            ImPlot::ColormapScale("##HeatScale", scale_min, scale_max, ImVec2(60, image_size.y));
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("v")) {
+            Image image_v(nghost, nx, ny, v);
+            if (ImPlot::BeginPlot("##Heatmap1", image_size, ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
+                ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
+                ImPlot::PlotHeatmap("heat", image_v.GetImage(), image.nx, image.ny, scale_min, scale_max, nullptr,
+                                    ImPlotPoint(0, 0), ImPlotPoint(1, 1));
+                ImPlot::EndPlot();
+            }
+            ImGui::SameLine();
+            ImPlot::ColormapScale("##HeatScale", scale_min, scale_max, ImVec2(60, image_size.y));
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("en")) {
+            Image image_en(nghost, nx, ny, en);
+            if (ImPlot::BeginPlot("##Heatmap1", image_size, ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
+                ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
+                ImPlot::PlotHeatmap("heat", image_en.GetImage(), image.nx, image.ny, scale_min, scale_max, nullptr,
+                                    ImPlotPoint(0, 0), ImPlotPoint(1, 1));
+                ImPlot::EndPlot();
+            }
+            ImGui::SameLine();
+            ImPlot::ColormapScale("##HeatScale", scale_min, scale_max, ImVec2(60, image_size.y));
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
     }
-    ImGui::SameLine();
-    ImPlot::ColormapScale("##HeatScale", scale_min, scale_max, ImVec2(60, image_size.y));
 }
 
 Grid::Grid(const struct RTSettings &settings) {
@@ -133,22 +175,23 @@ void Grid::Resize() {
 
 void Grid::RTInstability() {
     // Initial condition setup for RT Instability
-    for (int i = 0; i < nxg; i++) {
-        for (int j = 0; j < nyg; j++) {
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
             const float xi = x1 + dlx * (i - 0.5f);
             const float yj = y1 + dly * (j - 0.5f);
 
-            gx[i][j] = grav_x_ini;
-            gy[i][j] = grav_y_ini;
+            gx[i + nghost][j + nghost] = grav_x_ini;
+            gy[i + nghost][j + nghost] = grav_y_ini;
             if (yj < 0.0f) {
-                rho[i][j] = rho_ini_lower;
+                rho[i + nghost][j + nghost] = rho_ini_lower;
             } else {
-                rho[i][j] = rho_ini_upper;
+                rho[i + nghost][j + nghost] = rho_ini_upper;
             }
-            en[i][j] = en_ini + gy[i][j] * yj * rho[i][j];
-            u[i][j] = 0.0f;
-            v[i][j] = perturb_strength * (1.0f + std::cos(4.0f * M_PI * xi)) * (1.0f + std::cos(3.0f * M_PI * yj)) /
-                      4.0f;
+            en[i + nghost][j + nghost] = en_ini + gy[i + nghost][j + nghost] * yj * rho[i + nghost][j + nghost];
+            u[i + nghost][j + nghost] = 0.0f;
+            v[i + nghost][j + nghost] = perturb_strength * (1.0f + std::cos(4.0f * M_PI * xi)) * (
+                                            1.0f + std::cos(3.0f * M_PI * yj)) /
+                                        4.0f;
         }
     }
 }

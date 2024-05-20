@@ -30,7 +30,7 @@ struct RTSettings {
     y1 = -0.75f;
     y2 = 0.75f;
     rho_ini_upper = 1.0f; // This is the density of the fluid on the top
-    rho_ini_lower = 3.0f; // This is the density of the fluid on the bottom
+    rho_ini_lower = 2.0f; // This is the density of the fluid on the bottom
     en_ini = 2.5f;
     grav_x_ini = -0.0f;
     grav_y_ini = -0.1f;
