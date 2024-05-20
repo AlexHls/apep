@@ -32,4 +32,19 @@ void Reconstructor::ReconstructConstant(const struct QVec &q, struct QVec &ql,
 void Reconstructor::ReconstructLinear(const struct QVec &q, struct QVec &ql,
                                       struct QVec &qr, const int dir) {
     // Reconstruct linear
+    if (dir == XDIR) {
+        for (int i = 0; i < nx + 1; i++) {
+            ql.rho[i] = q.rho[i + 1] - 0.5f * 0.5f * (q.rho[i + 1] - q.rho[i] + q.rho[i + 2] - q.rho[i + 1]);
+            ql.u[i] = q.u[i + 1] - 0.5f * 0.5f * (q.u[i + 1] - q.u[i] + q.u[i + 2] - q.u[i + 1]);
+            ql.v[i] = q.v[i + 1] - 0.5f * 0.5f * (q.v[i + 1] - q.v[i] + q.v[i + 2] - q.v[i + 1]);
+            ql.en[i] = q.en[i + 1] - 0.5f * 0.5f * (q.en[i + 1] - q.en[i] + q.en[i + 2] - q.en[i + 1]);
+        }
+    } else if (dir == YDIR) {
+        for (int j = 0; j < ny + 1; j++) {
+            ql.rho[j] = q.rho[j + 1] - 0.5f * 0.5f * (q.rho[j + 1] - q.rho[j] + q.rho[j + 2] - q.rho[j + 1]);
+            ql.u[j] = q.u[j + 1] - 0.5f * 0.5f * (q.u[j + 1] - q.u[j] + q.u[j + 2] - q.u[j + 1]);
+            ql.v[j] = q.v[j + 1] - 0.5f * 0.5f * (q.v[j + 1] - q.v[j] + q.v[j + 2] - q.v[j + 1]);
+            ql.en[j] = q.en[j + 1] - 0.5f * 0.5f * (q.en[j + 1] - q.en[j] + q.en[j + 2] - q.en[j + 1]);
+        }
+    }
 }
