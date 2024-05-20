@@ -25,6 +25,11 @@ struct RTInstabilityApp : App {
       grid.TimeStep();
       grid.time += grid.dt;
     }
+    if (!settings.playing && settings.advance) {
+      grid.TimeStep();
+      grid.time += grid.dt;
+      settings.advance = 0;
+    }
   }
 };
 

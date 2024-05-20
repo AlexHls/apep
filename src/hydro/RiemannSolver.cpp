@@ -3,9 +3,8 @@
 #include <cmath>
 #include <iostream>
 
-template<typename T>
-int sign(T val) {
-    return (T(0) < val) - (val < T(0));
+int sign(const float val) {
+    return std::signbit(val) ? -1 : 1;
 }
 
 RiemannSolver::RiemannSolver(int nx, int ny, int nghost, int rs) : nx(nx), ny(ny), nghost(nghost), rs(rs) {
@@ -21,7 +20,6 @@ void RiemannSolver::Solve(const struct QVec &ql, const struct QVec &qr, struct Q
 
 void RiemannSolver::SolveHLLC(const struct QVec &ql, const struct QVec &qr, struct QVec &flux, const float gamma_ad) {
     // Solve HLLC
-    std::cout << "Running HLLC..." << std::endl;
     for (int i = 0; i < nx + 1; i++) {
         // Left states
         const float rhol = ql.rho[i];

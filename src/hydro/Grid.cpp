@@ -208,7 +208,7 @@ void Grid::PrimToCons() {
 void Grid::ConsToPrim() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            static float rho_new = cons.rho[i][j];
+            const float rho_new = cons.rho[i][j];
             u[i + nghost][j + nghost] = cons.u[i][j] / rho_new;
             v[i + nghost][j + nghost] = cons.v[i][j] / rho_new;
             en[i + nghost][j + nghost] =
@@ -221,6 +221,7 @@ void Grid::ConsToPrim() {
 
 void Grid::TimeStep() {
     // Advance one time step
+    PrimToCons();
 
     // First, apply boundary conditions
     ApplyBoundaryConditions();
@@ -229,12 +230,12 @@ void Grid::TimeStep() {
 
     // Calculate the fluxes in x direction
     for (int j = 0; j < ny; j++) {
-        QVec qlx(nx + 1), qrx(nx + 1), q(nxg);
+        QVec qlx(nx + 1), qrx(nx + 1), qx(nxg);
         QVec fluxx(nx + 1);
-        for (int i = 0; i < nx; i++) {
-            q.Set(i, rho[i][j], u[i][j], v[i][j], en[i][j]);
+        for (int i = 0; i < nxg; i++) {
+            qx.Set(i, rho[i][j], u[i][j], v[i][j], en[i][j]);
         }
-        reconstructor->Reconstruct(q, qlx, qrx);
+        reconstructor->Reconstruct(qx, qlx, qrx, XDIR);
         riemann_solver->Solve(qlx, qrx, fluxx, gamma_ad);
         for (int i = 0; i < nx; i++) {
             res.rho[i][j] = (fluxx.rho[i + 1] - fluxx.rho[i]) / dlx;
@@ -246,12 +247,12 @@ void Grid::TimeStep() {
 
     // Calculate the fluxes in y direction
     for (int i = 0; i < nx; i++) {
-        QVec qly(ny + 1), qry(ny + 1), q(nyg);
+        QVec qly(ny + 1), qry(ny + 1), qy(nyg);
         QVec fluxy(ny + 1);
-        for (int j = 0; j < ny; j++) {
-            q.Set(j, rho[i][j], u[i][j], v[i][j], en[i][j]);
+        for (int j = 0; j < nyg; j++) {
+            qy.Set(j, rho[i][j], u[i][j], v[i][j], en[i][j]);
         }
-        reconstructor->Reconstruct(q, qly, qry);
+        reconstructor->Reconstruct(qy, qly, qry, YDIR);
         riemann_solver->Solve(qly, qry, fluxy, gamma_ad);
         for (int j = 0; j < ny; j++) {
             res.rho[i][j] = (fluxy.rho[j + 1] - fluxy.rho[j]) / dly;
@@ -274,7 +275,6 @@ void Grid::TimeStep() {
 
     // Integrate result
     // TODO: Move this to it's own function
-    QVec2 k2(nx, ny);
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             cons.rho[i][j] = cons.rho[i][j] + dt * res.rho[i][j];
@@ -290,28 +290,36 @@ void Grid::TimeStep() {
 void Grid::ApplyBoundaryConditions() {
     // Apply boundary conditions
     // Periodic in x, reflecting in y
-    for (int i = 0; i < nxg; i++) {
-        for (int j = 0; j < nghost; j++) {
-            rho[i][j] = rho[i][nyg - 2 * nghost + j];
-            rho[i][nyg - nghost + j] = rho[i][nghost + j];
-            en[i][j] = en[i][nyg - 2 * nghost + j];
-            en[i][nyg - nghost + j] = en[i][nghost + j];
-            u[i][j] = u[i][nyg - 2 * nghost + j];
-            u[i][nyg - nghost + j] = u[i][nghost + j];
-            v[i][j] = -v[i][nyg - 2 * nghost + j];
-            v[i][nyg - nghost + j] = -v[i][nghost + j];
+
+    // x-direction
+    for (int j = 0; j < nyg; j++) {
+        for (int ig = 0; ig < nghost; ig++) {
+            // Left boundary
+            rho[ig][j] = rho[nx + ig][j];
+            en[ig][j] = en[nx + ig][j];
+            u[ig][j] = u[nx + ig][j];
+            v[ig][j] = v[nx + ig][j];
+            // Right boundary
+            rho[nxg - ig - 1][j] = rho[2 * nghost - (ig + 1)][j];
+            en[nxg - ig - 1][j] = en[2 * nghost - (ig + 1)][j];
+            u[nxg - ig - 1][j] = u[2 * nghost - (ig + 1)][j];
+            v[nxg - ig - 1][j] = v[2 * nghost - (ig + 1)][j];
         }
     }
-    for (int j = 0; j < nyg; j++) {
-        for (int i = 0; i < nghost; i++) {
-            rho[i][j] = rho[nxg - 2 * nghost + i][j];
-            rho[nxg - nghost + i][j] = rho[nghost + i][j];
-            en[i][j] = en[nxg - 2 * nghost + i][j];
-            en[nxg - nghost + i][j] = en[nghost + i][j];
-            u[i][j] = -u[nxg - 2 * nghost + i][j];
-            u[nxg - nghost + i][j] = -u[nghost + i][j];
-            v[i][j] = v[nxg - 2 * nghost + i][j];
-            v[nxg - nghost + i][j] = v[nghost + i][j];
+
+    // y-direction
+    for (int i = 0; i < nxg; i++) {
+        for (int jg = 0; jg < nghost; jg++) {
+            // Bottom boundary
+            rho[i][jg] = rho[i][2 * nghost - (jg + 1)];
+            en[i][jg] = en[i][2 * nghost - (jg + 1)];
+            u[i][jg] = u[i][2 * nghost - (jg + 1)];
+            v[i][jg] = -v[i][2 * nghost - (jg + 1)];
+            // Top boundary
+            rho[i][nyg - jg - 1] = rho[i][ny - jg + 1];
+            en[i][nyg - jg - 1] = en[i][ny - jg + 1];
+            u[i][nyg - jg - 1] = u[i][ny - jg + 1];
+            v[i][nyg - jg - 1] = -v[i][ny - jg + 1];
         }
     }
 }

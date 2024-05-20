@@ -23,11 +23,11 @@ struct Reconstructor {
 
     ~Reconstructor() = default;
 
-    void Reconstruct(const struct QVec &q, struct QVec &ql, struct QVec &qr);
+    void Reconstruct(const struct QVec &q, struct QVec &ql, struct QVec &qr, const int dir);
 
-    void ReconstructConstant(const struct QVec &q, struct QVec &ql, struct QVec &qr);
+    void ReconstructConstant(const struct QVec &q, struct QVec &ql, struct QVec &qr, const int dir);
 
-    void ReconstructLinear(const struct QVec &q, struct QVec &ql, struct QVec &qr);
+    void ReconstructLinear(const struct QVec &q, struct QVec &ql, struct QVec &qr, const int dir);
 };
 
 

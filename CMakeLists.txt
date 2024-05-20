@@ -3,11 +3,15 @@ project(apep)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_compile_options(-O3 -march=native)
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif ()
 
-# Debug build
-set(CMAKE_BUILD_TYPE Debug)
-add_compile_options(-g)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_options(-O3 -march=native)
+elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-g)
+endif ()
 
 find_package(glfw3 REQUIRED)
 

@@ -17,13 +17,14 @@ struct RTSettings {
   float gamma_ad; // Adiabatic index
   int resetting;
   int playing;
+  int advance;
   int reconstruct_type; // 0 for constant, 1 for linear
   int riemann_solver_type; // 0 for HLLE, 1 for HLLC
   RTSettings() {
     // Set default values
     nx = 24;
     ny = 72;
-    nghost = 2;
+    nghost = 1;
     x1 = -0.25f;
     x2 = 0.25f;
     y1 = -0.75f;
@@ -39,6 +40,7 @@ struct RTSettings {
     gamma_ad = 5.0f / 3.0f;
     resetting = 0;
     playing = 0;
+    advance = 0;
     reconstruct_type = 0;
     riemann_solver_type = 1;
   }
@@ -101,6 +103,9 @@ struct RTSettings {
     }
     ImGui::SameLine();
     ImGui::Text("Playing: %s", playing ? "true" : "false");
+    if (ImGui::Button("Advance")) {
+      advance++;
+    }
     ImGui::End();
   }
 };
