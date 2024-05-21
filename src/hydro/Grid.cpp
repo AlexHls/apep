@@ -312,10 +312,10 @@ void Grid::TimeStep() {
             qy.Set(j, rho[i + nghost][j], u[i + nghost][j], v[i + nghost][j], en[i + nghost][j]);
         }
         reconstructor->Reconstruct(qy, qly, qry, YDIR);
-        qly.FlipVelocities();
-        qry.FlipVelocities();
+        qly.FlipVelocities(1);
+        qry.FlipVelocities(1);
         riemann_solver->Solve(qly, qry, fluxy, gamma_ad, YDIR);
-        fluxy.FlipVelocities();
+        fluxy.FlipVelocities(-1);
         for (int j = 0; j < ny; j++) {
             res.rho[i][j] += (fluxy.rho[j + 1] - fluxy.rho[j]) / dly;
             res.u[i][j] += (fluxy.u[j + 1] - fluxy.u[j]) / dly;
@@ -339,10 +339,10 @@ void Grid::TimeStep() {
     // TODO: Move this to it's own function
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            cons.rho[i][j] = cons0.rho[i][j] + dt * res.rho[i][j];
-            cons.u[i][j] = cons0.u[i][j] + dt * res.u[i][j];
-            cons.v[i][j] = cons0.v[i][j] + dt * res.v[i][j];
-            cons.en[i][j] = cons0.en[i][j] + dt * res.en[i][j];
+            cons.rho[i][j] = cons0.rho[i][j] - dt * res.rho[i][j];
+            cons.u[i][j] = cons0.u[i][j] - dt * res.u[i][j];
+            cons.v[i][j] = cons0.v[i][j] - dt * res.v[i][j];
+            cons.en[i][j] = cons0.en[i][j] - dt * res.en[i][j];
         }
     }
 

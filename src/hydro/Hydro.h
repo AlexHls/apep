@@ -59,12 +59,12 @@ struct QVec {
         this->en = en;
     }
 
-    void FlipVelocities() {
+    void FlipVelocities(const int sgn) {
         for (size_t i = 0; i < u.size(); i++) {
             const float u_tmp = u[i];
             const float v_tmp = v[i];
-            u[i] = v_tmp;
-            v[i] = -u_tmp;
+            u[i] = sgn * v_tmp;
+            v[i] = -1 * sgn * u_tmp;
         }
     }
 };
