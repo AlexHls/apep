@@ -3,7 +3,15 @@ project(apep)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_compile_options(-O3 -march=native)
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif ()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_options(-O3 -march=native)
+elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-g)
+endif ()
 
 find_package(glfw3 REQUIRED)
 
@@ -82,9 +90,28 @@ add_library(app
 target_include_directories(app PUBLIC src/app)
 target_link_libraries(app implot)
 
+###################
+# Hydro Framework #
+###################
+add_library(hydro
+        src/hydro/Hydro.h
+        src/hydro/Grid.h
+        src/hydro/Grid.cpp
+        src/hydro/Reconstruct.h
+        src/hydro/Reconstruct.cpp
+        src/hydro/RiemannSolver.h
+        src/hydro/RiemannSolver.cpp
+)
+target_include_directories(hydro PUBLIC src/hydro)
+
 #######################
 # Individual programs #
 #######################
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/utils)
+
 add_executable(demo "src/demo.cpp")
 target_link_libraries(demo PUBLIC app)
+
+add_executable(rt_instability "src/rt_instability.cpp")
+target_link_libraries(rt_instability PUBLIC app hydro)
