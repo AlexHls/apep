@@ -27,6 +27,7 @@ struct Grid {
     float gamma_ad;
     int reconstruct_type;
     int riemann_solver_type;
+    int rkstages; // Number of Runge-Kutta stages
     Reconstructor *reconstructor;
     RiemannSolver *riemann_solver;
 

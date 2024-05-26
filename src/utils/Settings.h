@@ -21,6 +21,7 @@ struct RTSettings {
   int cycles_per_frame;
   int reconstruct_type; // 0 for constant, 1 for linear
   int riemann_solver_type; // 0 for HLLE, 1 for HLLC
+  int rkstages; // Number of Runge-Kutta stages
   RTSettings() {
     // Set default values
     nx = 5;
@@ -45,6 +46,7 @@ struct RTSettings {
     cycles_per_frame = 1;
     reconstruct_type = 1;
     riemann_solver_type = 1;
+    rkstages = 2;
   }
 
   void Update() {
@@ -91,6 +93,22 @@ struct RTSettings {
           if (ImGui::Selectable(items[n], is_selected)) {
             item_current = n;
             riemann_solver_type = n;
+          }
+          if (is_selected)
+            ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndListBox();
+      }
+    }
+    if (ImGui::CollapsingHeader("Integrator")) {
+      const char *items[] = {"Euler", "RK2"};
+      static int item_current = 1;
+      if (ImGui::BeginListBox("Integrator")) {
+        for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
+          const bool is_selected = (item_current == n);
+          if (ImGui::Selectable(items[n], is_selected)) {
+            item_current = n;
+            rkstages = n + 1;
           }
           if (is_selected)
             ImGui::SetItemDefaultFocus();
