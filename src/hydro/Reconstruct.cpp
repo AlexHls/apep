@@ -1,5 +1,18 @@
 #include "Reconstruct.h"
 
+#include <cmath>
+
+static float minmod(const float &a, const float &b) {
+    if (a * b <= 0.0f) return 0.0;
+    return (std::abs(a) < std::abs(b)) ? a : b;
+}
+
+static float get_slope(const float &ql, const float &q, const float &qr) {
+    const float dql = q - ql;
+    const float dqr = qr - q;
+    return minmod(dql, dqr);
+}
+
 Reconstructor::Reconstructor(const int nx, const int ny, const int nghost, const int rct) : nx(nx), ny(ny),
     nghost(nghost), rct(rct) {
 }
@@ -32,20 +45,41 @@ void Reconstructor::ReconstructConstant(const struct QVec &q, struct QVec &ql,
 void Reconstructor::ReconstructLinear(const struct QVec &q, struct QVec &ql,
                                       struct QVec &qr, const int dir) {
     // Reconstruct linear
-    // TODO: Probably broken
     if (dir == XDIR) {
         for (int i = 0; i < nx + 1; i++) {
-            ql.rho[i] = q.rho[i + 1] - 0.5f * 0.5f * (q.rho[i + 1] - q.rho[i] + q.rho[i + 2] - q.rho[i + 1]);
-            ql.u[i] = q.u[i + 1] - 0.5f * 0.5f * (q.u[i + 1] - q.u[i] + q.u[i + 2] - q.u[i + 1]);
-            ql.v[i] = q.v[i + 1] - 0.5f * 0.5f * (q.v[i + 1] - q.v[i] + q.v[i + 2] - q.v[i + 1]);
-            ql.en[i] = q.en[i + 1] - 0.5f * 0.5f * (q.en[i + 1] - q.en[i] + q.en[i + 2] - q.en[i + 1]);
+            // Left side
+            ql.rho[i] = q.rho[nghost + i - 1] + 0.5f * get_slope(q.rho[nghost + i - 2], q.rho[nghost + i - 1],
+                                                                 q.rho[nghost + i]);
+            ql.u[i] = q.u[nghost + i - 1] + 0.5f * get_slope(q.u[nghost + i - 2], q.u[nghost + i - 1], q.u[nghost + i]);
+            ql.v[i] = q.v[nghost + i - 1] + 0.5f * get_slope(q.v[nghost + i - 2], q.v[nghost + i - 1], q.v[nghost + i]);
+            ql.en[i] = q.en[nghost + i - 1] + 0.5f *
+                       get_slope(q.en[nghost + i - 2], q.en[nghost + i - 1], q.en[nghost + i]);
+
+            // Right side
+            qr.rho[i] = q.rho[nghost + i] - 0.5f * get_slope(q.rho[nghost + i - 1], q.rho[nghost + i],
+                                                             q.rho[nghost + i + 1]);
+            qr.u[i] = q.u[nghost + i] - 0.5f * get_slope(q.u[nghost + i - 1], q.u[nghost + i], q.u[nghost + i + 1]);
+            qr.v[i] = q.v[nghost + i] - 0.5f * get_slope(q.v[nghost + i - 1], q.v[nghost + i], q.v[nghost + i + 1]);
+            qr.en[i] = q.en[nghost + i] - 0.5f *
+                       get_slope(q.en[nghost + i - 1], q.en[nghost + i], q.en[nghost + i + 1]);
         }
     } else if (dir == YDIR) {
         for (int j = 0; j < ny + 1; j++) {
-            ql.rho[j] = q.rho[j + 1] - 0.5f * 0.5f * (q.rho[j + 1] - q.rho[j] + q.rho[j + 2] - q.rho[j + 1]);
-            ql.u[j] = q.u[j + 1] - 0.5f * 0.5f * (q.u[j + 1] - q.u[j] + q.u[j + 2] - q.u[j + 1]);
-            ql.v[j] = q.v[j + 1] - 0.5f * 0.5f * (q.v[j + 1] - q.v[j] + q.v[j + 2] - q.v[j + 1]);
-            ql.en[j] = q.en[j + 1] - 0.5f * 0.5f * (q.en[j + 1] - q.en[j] + q.en[j + 2] - q.en[j + 1]);
+            // Left side
+            ql.rho[j] = q.rho[nghost + j - 1] + 0.5f * get_slope(q.rho[nghost + j - 2], q.rho[nghost + j - 1],
+                                                                 q.rho[nghost + j]);
+            ql.u[j] = q.u[nghost + j - 1] + 0.5f * get_slope(q.u[nghost + j - 2], q.u[nghost + j - 1], q.u[nghost + j]);
+            ql.v[j] = q.v[nghost + j - 1] + 0.5f * get_slope(q.v[nghost + j - 2], q.v[nghost + j - 1], q.v[nghost + j]);
+            ql.en[j] = q.en[nghost + j - 1] + 0.5f *
+                       get_slope(q.en[nghost + j - 2], q.en[nghost + j - 1], q.en[nghost + j]);
+
+            // Right side
+            qr.rho[j] = q.rho[nghost + j] - 0.5f * get_slope(q.rho[nghost + j - 1], q.rho[nghost + j],
+                                                             q.rho[nghost + j + 1]);
+            qr.u[j] = q.u[nghost + j] - 0.5f * get_slope(q.u[nghost + j - 1], q.u[nghost + j], q.u[nghost + j + 1]);
+            qr.v[j] = q.v[nghost + j] - 0.5f * get_slope(q.v[nghost + j - 1], q.v[nghost + j], q.v[nghost + j + 1]);
+            qr.en[j] = q.en[nghost + j] - 0.5f *
+                       get_slope(q.en[nghost + j - 1], q.en[nghost + j], q.en[nghost + j + 1]);
         }
     }
 }

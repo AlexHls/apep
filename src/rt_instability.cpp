@@ -22,8 +22,14 @@ struct RTInstabilityApp : App {
     }
     grid.Update();
     if (grid.time < settings.tmax && settings.playing) {
-      grid.TimeStep();
-      grid.time += grid.dt;
+      for (int i = 0; i < settings.cycles_per_frame; i++) {
+        grid.TimeStep();
+        grid.time += grid.dt;
+        if (grid.time >= settings.tmax) {
+          settings.playing = 0;
+          break;
+        }
+      }
     }
     if (!settings.playing && settings.advance) {
       grid.TimeStep();

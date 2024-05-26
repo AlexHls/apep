@@ -110,11 +110,11 @@ void Grid::Update() {
     }
 }
 
-Grid::Grid(const struct RTSettings &settings) {
+Grid::Grid(RTSettings &settings) {
     Reset(settings);
 }
 
-void Grid::Reset(const RTSettings &settings) {
+void Grid::Reset(RTSettings &settings) {
     AttrsFromSettings(settings);
     Resize();
     RTInstability();
@@ -126,10 +126,18 @@ void Grid::Clear() {
     delete riemann_solver;
 }
 
-void Grid::AttrsFromSettings(const struct RTSettings &settings) {
+void Grid::AttrsFromSettings(RTSettings &settings) {
     this->nx = settings.nx;
     this->ny = settings.ny;
     this->nghost = settings.nghost;
+    this->reconstruct_type = settings.reconstruct_type;
+    if (this->reconstruct_type == CONSTANT && this->nghost < 1) {
+        this->nghost = 1;
+        settings.nghost = 1;
+    } else if (this->reconstruct_type == LINEAR && this->nghost < 2) {
+        this->nghost = 2;
+        settings.nghost = 2;
+    }
     this->nxg = nx + 2 * nghost;
     this->nyg = ny + 2 * nghost;
     this->nxmg = nxg - nghost;
@@ -150,7 +158,6 @@ void Grid::AttrsFromSettings(const struct RTSettings &settings) {
     this->cfl = settings.cfl;
     this->dt = 0.5 * cfl * std::min(dlx, dly) / 3.5;
     this->gamma_ad = settings.gamma_ad;
-    this->reconstruct_type = settings.reconstruct_type;
     this->riemann_solver_type = settings.riemann_solver_type;
     // Delete the old reconstructor and create a new one
     this->reconstructor = new Reconstructor(nx, ny, nghost, reconstruct_type);
@@ -373,10 +380,10 @@ void Grid::ApplyBoundaryConditions() {
     for (int i = 0; i < nxg; i++) {
         for (int jg = 0; jg < nghost; jg++) {
             // Bottom boundary
-            rho[i][nghost - 1 - jg] = rho[i][nghost - jg];
-            en[i][nghost - 1 - jg] = en[i][nghost - jg];
-            u[i][nghost - 1 - jg] = u[i][nghost - jg];
-            v[i][nghost - 1 - jg] = -v[i][nghost - jg];
+            rho[i][nghost - 1 - jg] = rho[i][nghost + jg];
+            en[i][nghost - 1 - jg] = en[i][nghost + jg];
+            u[i][nghost - 1 - jg] = u[i][nghost + jg];
+            v[i][nghost - 1 - jg] = -v[i][nghost + jg];
             // Top boundary
             rho[i][ny + nghost + jg] = rho[i][ny + nghost - 1 - jg];
             en[i][ny + nghost + jg] = en[i][ny + nghost - 1 - jg];

@@ -10,8 +10,9 @@ endif ()
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O3 -march=native)
 elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(-g)
+    add_compile_options(-Og -march=native)
 endif ()
+add_compile_options(-g)
 
 find_package(glfw3 REQUIRED)
 

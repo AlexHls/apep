@@ -18,6 +18,7 @@ struct RTSettings {
   int resetting;
   int playing;
   int advance;
+  int cycles_per_frame;
   int reconstruct_type; // 0 for constant, 1 for linear
   int riemann_solver_type; // 0 for HLLE, 1 for HLLC
   RTSettings() {
@@ -35,13 +36,14 @@ struct RTSettings {
     grav_x_ini = -0.0f;
     grav_y_ini = -0.1f;
     perturb_strength = 0.01f;
-    tmax = 1.0f;
+    tmax = 10.0f;
     cfl = 0.8f;
     gamma_ad = 1.4f;
     resetting = 0;
     playing = 0;
     advance = 0;
-    reconstruct_type = 0;
+    cycles_per_frame = 1;
+    reconstruct_type = 1;
     riemann_solver_type = 1;
   }
 
@@ -63,9 +65,10 @@ struct RTSettings {
     ImGui::InputFloat("tmax", &tmax);
     ImGui::InputFloat("cfl", &cfl);
     ImGui::InputFloat("gamma_ad", &gamma_ad);
+    ImGui::SliderInt("cycles_per_frame", &cycles_per_frame, 1, 10);
     if (ImGui::CollapsingHeader("Reconstruction Method")) {
       const char *items[] = {"Constant", "Linear"};
-      static int item_current = 0;
+      static int item_current = 1;
       if (ImGui::BeginListBox("Reconstruction Method")) {
         for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
           const bool is_selected = (item_current == n);
