@@ -27,6 +27,7 @@ struct Grid {
     float gamma_ad;
     int reconstruct_type;
     int riemann_solver_type;
+    int rkstages; // Number of Runge-Kutta stages
     Reconstructor *reconstructor;
     RiemannSolver *riemann_solver;
 
@@ -51,11 +52,11 @@ struct Grid {
     void ApplyBoundaryConditions();
 
     // Functions for RT Instability
-    Grid(const struct RTSettings &settings);
+    Grid(struct RTSettings &settings);
 
-    void Reset(const struct RTSettings &settings);
+    void Reset(struct RTSettings &settings);
 
-    void AttrsFromSettings(const struct RTSettings &settings);
+    void AttrsFromSettings(struct RTSettings &settings);
 
     void RTInstability();
 };
